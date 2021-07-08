@@ -1,6 +1,11 @@
 # MAC nonsense
 .DS_Store
 
+# R nonsense
+.Rhistory
+
+### Below is a bunch of python stuff from github 🤷‍♂️ ###
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

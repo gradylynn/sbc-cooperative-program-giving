@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(data.table)
 library(tidyverse)
 library(lubridate)
-library(plotly)
+library(knitr)
 ```
 
 ## Introduction
@@ -30,12 +30,12 @@ and over 5,000,000 in weekly worship attendance<sup>[1](https://www.sbc.net/abou
 making it the largest Protestant and second-largest Christian denomination in the United States
 (behind Roman Catholicism).<sup>[2](https://en.wikipedia.org/wiki/Southern_Baptist_Convention)</sup>
 
-The [Cooperative Program](https://www.sbc.net/missions/the-cooperative-program/) is the SBC's 
+The [Cooperative Program](https://www.sbc.net/missions/the-cooperative-program/) (CP) is the SBC's 
 **unified national giving plan for Southern Baptist ministries and missions**.
 Every SBC church decides how much of its designated gifts to send on to the Cooperative Program.
 This amount is then forwarded to that church's state baptist convention.
 Each state convention then decides how much money stays in the state for local ministry and how much is
-forwarded to the national Cooperative Program. The national Cooperative Program then budgets these resourses towards
+forwarded to the national Cooperative Program. The national Cooperative Program then budgets these resources towards
 national programs.
 
 The most notable national CP budget items include:
@@ -54,11 +54,11 @@ The most notable national CP budget items include:
 
 The national Cooperative Program releases
 [reports](https://www.sbc.net/missions/the-cooperative-program/reports/monthly/) detailing the receipts
-from each state convention and the budget items and amounts for each month. This data has been scraped and consolidated
+from each state convention and the budget items for each month. This data has been scraped and consolidated
 [here](https://github.com/gradylynn/sbc-cooperative-program-giving/tree/main/data)
-using original code from [here](https://github.com/gradylynn/sbc-cooperative-program-giving).
+using original code that can be found [here](https://github.com/gradylynn/sbc-cooperative-program-giving).
 
-This project is intended as a general overview of the SBC's monthly Cooperative Program receipts and budget
+This project is intended as a general overview of the SBC's monthly Cooperative Program budget and receipts
 (since October 2012).
 
 ```{r}
@@ -97,9 +97,9 @@ receipts_df[source %in% c('Puerto Rico', 'Puerto Rico/Virgin Islands'),
 ## Data Overview
 
 Here are some charts which give an overview of the CP reporting data.
-There are **two parts of the data** which will be examined in turn:
+There are **two parts** which will be examined in turn:
 
-1. **Budget** (amounts budgeted towards different missions and ministries)
+1. **Budget** (amounts budgeted towards various missions and ministries)
 2. **Receipts** (amounts received from state conventions)
 
 There are also **two different types of gifts & spending**:
@@ -110,11 +110,11 @@ specifically to the International Mission Board.
 2. **Allocated Spending** - For all non-designated gifts, the Cooperative Program can decide how much to allocate
 to various programs.
 
-### Cooperative Program Budget
+### CP Budget Overview
 
-We will first look at the national CP budget.
+Here is a first look at the national CP budget.
 
-#### Overview {.tabset .tabset-fade .tabset-pills}
+#### Overall {.tabset .tabset-fade .tabset-pills}
 ```{r}
 # data prep
 temp_budget_df <- copy(budget_df)[,ministry:=ifelse(grepl('Seminary', ministry), 'Seminaries', ministry)]
@@ -123,7 +123,7 @@ temp_budget_df <- temp_budget_df[, .(allocation=sum(allocation), designated=sum(
                                  by=.(date, fy, year, month, ministry)]
 ```
 
-In this budget overview, the CP budget is divided into 4 broad categories:
+In this overall budget overview, the CP budget is divided into 4 broad categories:
 
 1. International Mission Board (IMB)
 2. North American Mission Board (NAMB)
@@ -135,9 +135,9 @@ A note on the yearly aggregations: the 'yearly' charts below shows the
 Because the data goes from Oct 2012 to present day, there may be partial years (and unexpected patterns) 
 at the beginning and end of the yearly charts.
 
-##### Overall (Allocations + Designations) {.tabset .tabset-fade}
+##### Total Budget (Allocations + Designations) {.tabset .tabset-fade}
 
-###### Monthly Overall
+###### Monthly Total Budget
 ```{r}
 ggplot(data=temp_budget_df) +
   geom_line(mapping = aes(x=date, y=(allocation+designated)/1000000, color=ministry)) +
@@ -150,7 +150,7 @@ ggplot(data=temp_budget_df) +
 
 ***
 
-###### Yearly Overall
+###### Yearly Total Budget
 ```{r}
 ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(designated)), by=.(year, ministry)]) +
   geom_line(mapping = aes(x=year, y=(allocation+designated)/1000000, color=ministry)) +
@@ -173,7 +173,7 @@ ggplot(data=temp_budget_df) +
   xlab('Month') + ylab('Amount Budgeted (millions of USD)') +
   theme(legend.position='top', legend.title=element_blank()) +
   geom_point(aes(x=x, y=y), data=data.frame(x=c(myd('09-2017-01')), y=c(1.3)),
-             size=18, shape=1, stroke=1, color='red')
+           size=18, shape=1, stroke=1, color='red')
 ```
 
 This chart displays a noticeable outlier (circled above): In September 2017, the non-seminary-or-mission-board budget
@@ -238,28 +238,125 @@ temp_budget_df <- budget_df[grepl('Seminary', ministry)][, Seminary:=sub('Semina
                             .(allocation=mean(allocation), designated=mean(designated)), by=.(date, year, Seminary)]
 ```
 This section zooms in on the seminary spending of the cooperative program.
-Note (from the previous charts) that the vast majority of these seminaries' budgets are from allocated, not designated.
+Note (from the previous charts) that the vast majority of these seminaries' budgets are allocated, not designated.
 
-##### Monthly Seminary Spending
+##### Monthly Seminary Budget
 ```{r}
 ggplot(data=temp_budget_df) +
   geom_line(mapping = aes(x=date, y=(allocation+designated)/1000, color=Seminary)) +
   ggtitle('Monthly Seminary Budget') +
-  xlab('Month') + ylab('Amount Budgeted (thousands of USD)')
+  xlab('Month') + ylab('Amount Budgeted (thousands of USD)') +
+  theme(legend.position='top', legend.title=element_blank())
 ```
 
 \
 
 ***
 
-##### Yearly Seminary Spending
+##### Yearly Seminary Budget
 ```{r}
 ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(designated)), by=.(year, Seminary)]) +
   geom_line(mapping = aes(x=year, y=(allocation+designated)/1000, color=Seminary)) +
   ggtitle('Avg. Monthly Seminary Budget') +
-  xlab('Year') + ylab('Amount Budgeted (thousands of USD)')
+  xlab('Year') + ylab('Amount Budgeted (thousands of USD)') +
+  theme(legend.position='top', legend.title=element_blank())
 ```
 
 \
 
 ***
+
+#### Other Spending {.tabset .tabset-fade}
+```{r}
+# data prep
+one_time_items <- copy(budget_df)[, c:=.N, by=ministry][c==1, .(year, month, ministry, allocation, designated)]
+temp_budget_df <- budget_df[!grepl('(Seminary)|(Mission Board)', ministry)]
+temp_budget_df <- temp_budget_df[!ministry %in% one_time_items[,ministry]]
+temp_budget_df <- temp_budget_df[ministry=='SBC Executive Comm and SBC Operating', ministry:='SBC EC & Operating'][
+                                 ministry=='Ethics & Religious Liberty Comm', ministry:='ERLC'][
+                                 ministry=='GuideStone Financial Resources', ministry:='GuideStone'][
+                                 ministry=='Historical Library and Archives', ministry:='Library & Archives'][
+                                 ministry=='SBC Executive Comm - Vision 2025', ministry:='Vision 2025']
+```
+
+The majority of the Cooperative Program budget goes towards Mission Boards and Seminaries. This section will give an
+overview of all other reported spending (the majority of which is allocated, not designated). These "other" items
+include:
+
+1. **SBC Executive Committee and SBC Operating** (*SBC EC & Operating*)
+    - Budgeted for SBC Executive Committee, Staff, and Operating Costs.
+2. **Ethics and Religious Liberty Commission** (*ERLC*)
+    - The public policy arm of the SBC.
+3. **GuideStone Financial Resources** (*GuideStone*)
+    - Retirement solutions & insurance coverage for full-time 
+    ministers.<sup>[4](https://www.guidestone.org/About-Us)</sup>
+4. **Historical Library and Archives** (*Library & Archives*)
+    - A center to support the study of Baptist history located in the fourth floor of the
+    Southern Baptist Convention Building.<sup>[5](https://sbhla.org)</sup>
+5. **SBC Executive Committee - Vision 2025** (*Vision 2025*)
+    - The SBC's strategic plan aiming for various ministry goals by 2025.<sup>[6](https://www.sbc.net/vision-2025)</sup>
+5. **Miscellaneous**
+    - This budget item has stopped occurring in the reports since October 2020.
+
+##### One-Time Budget Items
+```{r}
+kable(one_time_items)
+```
+
+These few budget items only occur once in the data's timeframe.
+
+1. **NAMB - Disaster Relief** *(September 2017)* \
+This is discussed in the *Monthly Allocations* chart above.
+In the wake of hurricanes Irma, Harvey, and Maria, the SBC Executive Committee voted to designate $1.25 million of
+allocation budget overage towards disaster relief in Florida and
+Texas.<sup>[3](https://www.baptistpress.com/resource-library/news/cp-overage-reallocation-to-aid-hurricane-survivors/)</sup>
+
+2. **EC/SBC - SBC Presidential Study on Abuse** *(September 2018)* \
+In 2018, the SBC Executive Committee approved funding for presidential initiative to address sexual abuse in
+Southern Baptist churches.<sup>[7](https://www.baptistpress.com/resource-library/sbc-life-articles/sbc-presidential-sexual-abuse-study-launched-funded/)</sup>
+The initiative resulted in a [June 2019 report](https://caringwell.com/report/) and the
+[**Caring Well Challenge**](https://caringwell.com), an program for assisting churches in preventing abuse and
+caring for abuse survivors.
+
+These one-time budget items will be excluded from the other charts in this section.
+
+\
+
+***
+
+##### Monthly Other Budget
+```{r}
+ggplot(data=temp_budget_df) +
+  geom_line(mapping = aes(x=date, y=(allocation+designated)/1000, color=ministry)) +
+  ggtitle('Monthly Other Budget') +
+  xlab('Month') + ylab('Amount Budgeted (thousands of USD)') +
+  theme(legend.position='top', legend.title=element_blank())
+```
+
+Because this data reports CP budgeting, not necessarily actual spending, there are occasional budget corrections due to
+overages or deficits. For example, in September 2014 (at the end of the fiscal year), a large amount of money was
+designated away from the SBC operating budget, leading to the noticeable dip in the top line of the chart above.
+
+This chart also reveals a massive amount (more than $1.5 million) of designated funding towards SBC Operations for
+June 2021. A future iteration of this analysis will investigate that unexpected amount.
+
+\
+
+***
+
+##### Yearly Other Budget
+```{r}
+ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(designated)), by=.(year, ministry)]) +
+  geom_line(mapping = aes(x=year, y=(allocation+designated)/1000, color=ministry)) +
+  ggtitle('Avg. Monthly Other Budget') +
+  xlab('Year') + ylab('Amount Budgeted (thousands of USD)') +
+  theme(legend.position='top', legend.title=element_blank())
+```
+
+\
+
+***
+
+### CP Receipts Overview
+
+Now, here is a look at the national CP receipts.

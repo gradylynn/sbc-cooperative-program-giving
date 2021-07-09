@@ -42,7 +42,7 @@ number_cleaner = lambda x: float(re.sub('^\((.*)\)$', r'-\1', str(x).split()[0])
 # outputs results in a pandas DataFrame
 def parse_cp_receipts(filepath):
     # use tabula to parse the pdf
-    dfs = tabula.read_pdf(filepath, pages='1-4')
+    dfs = tabula.read_pdf(filepath, pages='1-4', silent=True)
 
     # weird tabula correction thing
     if len(dfs) > 4:
@@ -102,7 +102,7 @@ def parse_cp_receipts(filepath):
 # outputs results in a pandas DataFrame
 def parse_cp_budget(filepath):
     # use tabula to parse the pdf
-    dfs = tabula.read_pdf(filepath, pages=5)
+    dfs = tabula.read_pdf(filepath, pages=5, silent=True)
 
     df = dfs[0].drop(index=[0, 1]) # drop annoying header things
     df = df.drop(columns=df.columns[3:]) # drop everything but current allocated
@@ -197,3 +197,20 @@ def reports_to_csv(reports_path, csv_path):
 
     budget_df = budget_df[['fy', 'month', 'year', 'ministry', 'allocated', 'designated']]
     budget_df.to_csv(os.path.join(csv_path, 'cp_budget.csv'), index=False)
+
+# main function to update data.
+if __name__ == '__main__':
+    datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
+    reports_filepath = os.path.join(datapath, 'cp_reports.zip')
+
+    print('downloading reports...')
+    download_reports(reports_filepath)
+
+    print('reports downloaded. parsing reports...')
+    reports_to_csv(reports_filepath, datapath)
+
+    print('reports parsed. csvs written. updating rmarkdown html...')
+    command = ''' R -e "rmarkdown::render('index.Rmd', output_file='index.html')" '''
+    os.system(command)
+
+    print('Done!')

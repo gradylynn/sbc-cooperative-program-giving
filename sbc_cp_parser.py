@@ -54,14 +54,14 @@ def parse_cp_receipts(filepath):
     # Allocation Budget Receipts
     df1 = dfs[0].drop(index=[0,1]) # drop annoying header things
     df1 = df1.drop(columns=df1.columns[2:]) # drop everything but current
-    df1.columns = ['source', 'allocation'] # rename columns
+    df1.columns = ['source', 'allocated'] # rename columns
     df1['source'] = df1['source'].apply(lambda x: re.sub('\**$', '', x)) # remove stars at end of source names
     df1 = df1.set_index('source') # set source as index
-    df1['allocation'] = list(map(number_cleaner, list(df1['allocation']))) # convert to floats
+    df1['allocated'] = list(map(number_cleaner, list(df1['allocated']))) # convert to floats
     df1 = df1.drop(index=['Subtotal', 'Grand Total:'], errors='ignore') # drop aggregation rows
 
     if 'Churches' in df1.index: # fix old row names
-        df1.at['Churches & Individuals', 'allocation'] = df1['allocation']['Churches']+df1['allocation']['Individuals & Estates']
+        df1.at['Churches & Individuals', 'allocated'] = df1['allocated']['Churches']+df1['allocated']['Individuals & Estates']
         df1 = df1.drop(index=['Churches', 'Individuals & Estates']) # drop old row names
 
     # Designated Budget Receipts
@@ -79,19 +79,19 @@ def parse_cp_receipts(filepath):
 
     # Specific Designated Budget Receipts (fiscal year-to-date)
     df3 = dfs[3].drop(index=[0]).dropna(axis=1) # drop annoying header things
-    df3.columns = ['source', 'lottiemoon_fytd', 'arniearmstrong_fytd', 'other_fytd'] # rename columns
+    df3.columns = ['source', 'lottiemoon_fytd', 'anniearmstrong_fytd', 'other_fytd'] # rename columns
     df3['source'] = df3['source'].apply(lambda x: re.sub('\**$', '', x)) # remove stars at end of source names
     df3 = df3.set_index('source') # set source as index
 
     df3['lottiemoon_fytd'] = list(map(number_cleaner, list(df3['lottiemoon_fytd'])))
-    df3['arniearmstrong_fytd'] = list(map(number_cleaner, list(df3['arniearmstrong_fytd'])))
+    df3['anniearmstrong_fytd'] = list(map(number_cleaner, list(df3['anniearmstrong_fytd'])))
     df3['other_fytd'] = list(map(number_cleaner, list(df3['other_fytd'])))
 
     df3 = df3.drop(index=['Subtotal', 'Grand Total:']) # drop aggregation rows
 
     if 'Churches' in df3.index: # fix old row names
         df3.at['Churches & Individuals', 'lottiemoon_fytd'] = df3['lottiemoon_fytd']['Churches']+df3['lottiemoon_fytd']['Individuals & Estates']
-        df3.at['Churches & Individuals', 'arniearmstrong_fytd'] = df3['arniearmstrong_fytd']['Churches']+df3['arniearmstrong_fytd']['Individuals & Estates']
+        df3.at['Churches & Individuals', 'anniearmstrong_fytd'] = df3['anniearmstrong_fytd']['Churches']+df3['anniearmstrong_fytd']['Individuals & Estates']
         df3.at['Churches & Individuals', 'other_fytd'] = df3['other_fytd']['Churches']+df3['other_fytd']['Individuals & Estates']
         df3 = df3.drop(index=['Churches', 'Individuals & Estates'], errors='ignore') # drop old row names
 
@@ -105,11 +105,11 @@ def parse_cp_budget(filepath):
     dfs = tabula.read_pdf(filepath, pages=5)
 
     df = dfs[0].drop(index=[0, 1]) # drop annoying header things
-    df = df.drop(columns=df.columns[3:]) # drop everything but current allocation
-    df.columns = ['ministry', 'allocation', 'designated'] # rename columns
+    df = df.drop(columns=df.columns[3:]) # drop everything but current allocated
+    df.columns = ['ministry', 'allocated', 'designated'] # rename columns
     df = df.reset_index(drop=True).dropna() # reset index
 
-    df['allocation'] = list(map(number_cleaner, list(df['allocation'])))
+    df['allocated'] = list(map(number_cleaner, list(df['allocated'])))
     df['designated'] = list(map(number_cleaner, list(df['designated'])))
 
     name_cleaner = lambda x: re.sub('\*$', '', x)
@@ -180,5 +180,20 @@ def reports_to_csv(reports_path, csv_path):
     receipts_df = pd.concat(receipts_dfs).reset_index()
     budget_df = pd.concat(budget_dfs)
 
-    receipts_df[list(receipts_df.columns[-3:]) + list(receipts_df.columns[:-3])].to_csv(os.path.join(csv_path, 'cp_receipts.csv'), index=False)
-    budget_df[list(budget_df.columns[-3:]) + list(budget_df.columns[:-3])].to_csv(os.path.join(csv_path, 'cp_budget.csv'), index=False)
+    # Unwrapping the ytd designations into monthly amounts
+    receipts_df['fy_mo'] = receipts_df['month'].apply(lambda m: (int(datetime.strptime(m, '%b').strftime("%m"))-10)%12+1)
+    receipts_df = receipts_df.sort_values(['fy', 'fy_mo']).reset_index(drop=True)
+    receipts_df['lottiemoon'] = receipts_df['lottiemoon_fytd'] - receipts_df.groupby('source')['lottiemoon_fytd'].shift().fillna(0)*(receipts_df['fy_mo']!=1)
+    receipts_df['anniearmstrong'] = receipts_df['anniearmstrong_fytd'] - receipts_df.groupby('source')['anniearmstrong_fytd'].shift().fillna(0)*(receipts_df['fy_mo']!=1)
+    receipts_df['other_designated'] = receipts_df['other_fytd'] - receipts_df.groupby('source')['other_fytd'].shift().fillna(0)*(receipts_df['fy_mo']!=1)
+
+    receipts_df['lottiemoon'] = receipts_df['lottiemoon'].round(2)
+    receipts_df['anniearmstrong'] = receipts_df['anniearmstrong'].round(2)
+    receipts_df['other_designated'] = receipts_df['other_designated'].round(2)
+
+    # Writing csvs
+    receipts_df = receipts_df[['fy', 'month', 'year', 'source', 'allocated', 'designated', 'lottiemoon', 'anniearmstrong', 'other_designated']]
+    receipts_df.to_csv(os.path.join(csv_path, 'cp_receipts.csv'), index=False)
+
+    budget_df = budget_df[['fy', 'month', 'year', 'ministry', 'allocated', 'designated']]
+    budget_df.to_csv(os.path.join(csv_path, 'cp_budget.csv'), index=False)

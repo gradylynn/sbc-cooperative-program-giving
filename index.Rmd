@@ -63,24 +63,13 @@ This project is intended as a general overview of the SBC's monthly Cooperative 
 
 ```{r}
 # load data
-receipts_df <- fread('https://raw.githubusercontent.com/gradylynn/sbc-cooperative-program-giving/main/data/cp_receipts.csv')
-budget_df <- fread('https://raw.githubusercontent.com/gradylynn/sbc-cooperative-program-giving/main/data/cp_budget.csv')
-
-
-### Some data cleaning ###
+receipts_df <- fread('./data/cp_receipts.csv')
+budget_df <- fread('./data/cp_budget.csv')
 
 # order data chronologically
 receipts_df[,date:=myd(paste(month, year, '1'))]
 budget_df[,date:=myd(paste(month, year, '1'))]
 setorder(receipts_df, date)
-
-# convert year-to-date designated funding to designated funding by-month
-receipts_df[, `:=`(lottiemoon=lottiemoon_fytd-replace_na(shift(lottiemoon_fytd, 1), 0),
-                   arniearmstrong=arniearmstrong_fytd-replace_na(shift(arniearmstrong_fytd, 1), 0),
-                   other=other_fytd-replace_na(shift(other_fytd, 1), 0)
-                   ), by=.(source, fy)]
-
-receipts_df[, `:=`(lottiemoon_fytd=NULL, arniearmstrong_fytd=NULL, other_fytd=NULL),]
 
 # standardizing inconsistent ministry names
 budget_df[ministry %in% c('SBC Executive Comm and SBC Operating', 'Executive Committee and SBC Operating', 
@@ -119,7 +108,7 @@ Here is a first look at the national CP budget.
 # data prep
 temp_budget_df <- copy(budget_df)[,ministry:=ifelse(grepl('Seminary', ministry), 'Seminaries', ministry)]
 temp_budget_df <- temp_budget_df[,ministry:=ifelse(!grepl('(Seminaries)|(Mission Board)', ministry), 'Other', ministry)]
-temp_budget_df <- temp_budget_df[, .(allocation=sum(allocation), designated=sum(designated)),
+temp_budget_df <- temp_budget_df[, .(allocated=sum(allocated), designated=sum(designated)),
                                  by=.(date, fy, year, month, ministry)]
 ```
 
@@ -140,7 +129,7 @@ at the beginning and end of the yearly charts.
 ###### Monthly Total Budget
 ```{r}
 ggplot(data=temp_budget_df) +
-  geom_line(mapping = aes(x=date, y=(allocation+designated)/1000000, color=ministry)) +
+  geom_line(mapping = aes(x=date, y=(allocated+designated)/1000000, color=ministry)) +
   ggtitle('Monthly Budget (Allocations + Designations)') +
   xlab('Month') + ylab('Amount Budgeted (millions of USD)') +
   theme(legend.position='top', legend.title=element_blank())
@@ -152,8 +141,8 @@ ggplot(data=temp_budget_df) +
 
 ###### Yearly Total Budget
 ```{r}
-ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(designated)), by=.(year, ministry)]) +
-  geom_line(mapping = aes(x=year, y=(allocation+designated)/1000000, color=ministry)) +
+ggplot(data=temp_budget_df[,.(allocated=mean(allocated), designated=mean(designated)), by=.(year, ministry)]) +
+  geom_line(mapping = aes(x=year, y=(allocated+designated)/1000000, color=ministry)) +
   ggtitle('Avg. Monthly Budget (Allocations + Designations)') +
   xlab('Year') + ylab('Amount Budgeted (millions of USD)') +
   theme(legend.position='top', legend.title=element_blank())
@@ -168,7 +157,7 @@ ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(desig
 ###### Monthly Allocations
 ```{r}
 ggplot(data=temp_budget_df) +
-  geom_line(mapping = aes(x=date, y=allocation/1000000, color=ministry)) +
+  geom_line(mapping = aes(x=date, y=allocated/1000000, color=ministry)) +
   ggtitle('Monthly Budget (Allocations)') +
   xlab('Month') + ylab('Amount Budgeted (millions of USD)') +
   theme(legend.position='top', legend.title=element_blank()) +
@@ -188,8 +177,8 @@ disaster relief in Florida and Texas.<sup>[3](https://www.baptistpress.com/resou
 
 ###### Yearly Allocations
 ```{r}
-ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(designated)), by=.(year, ministry)]) +
-  geom_line(mapping = aes(x=year, y=allocation/1000000, color=ministry)) +
+ggplot(data=temp_budget_df[,.(allocated=mean(allocated), designated=mean(designated)), by=.(year, ministry)]) +
+  geom_line(mapping = aes(x=year, y=allocated/1000000, color=ministry)) +
   ggtitle('Avg. Monthly Budget (Allocations)') +
   xlab('Year') + ylab('Amount Budgeted (millions of USD)') +
   theme(legend.position='top', legend.title=element_blank())
@@ -220,7 +209,7 @@ and the [Annie Armstrong Easter Offering](https://www.anniearmstrong.com) respec
 
 ###### Yearly Designations
 ```{r}
-ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(designated)), by=.(year, ministry)]) +
+ggplot(data=temp_budget_df[,.(allocated=mean(allocated), designated=mean(designated)), by=.(year, ministry)]) +
   geom_line(mapping = aes(x=year, y=designated/1000000, color=ministry)) +
   ggtitle('Avg. Monthly Budget (Designations)') +
   xlab('Year') + ylab('Amount Budgeted (millions of USD)') +
@@ -235,7 +224,7 @@ ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(desig
 ```{r}
 # data prep
 temp_budget_df <- budget_df[grepl('Seminary', ministry)][, Seminary:=sub('Seminary', '', ministry)][, 
-                            .(allocation=mean(allocation), designated=mean(designated)), by=.(date, year, Seminary)]
+                            .(allocated=mean(allocated), designated=mean(designated)), by=.(date, year, Seminary)]
 ```
 This section zooms in on the seminary spending of the cooperative program.
 Note (from the previous charts) that the vast majority of these seminaries' budgets are allocated, not designated.
@@ -243,7 +232,7 @@ Note (from the previous charts) that the vast majority of these seminaries' budg
 ##### Monthly Seminary Budget
 ```{r}
 ggplot(data=temp_budget_df) +
-  geom_line(mapping = aes(x=date, y=(allocation+designated)/1000, color=Seminary)) +
+  geom_line(mapping = aes(x=date, y=(allocated+designated)/1000, color=Seminary)) +
   ggtitle('Monthly Seminary Budget') +
   xlab('Month') + ylab('Amount Budgeted (thousands of USD)') +
   theme(legend.position='top', legend.title=element_blank())
@@ -255,8 +244,8 @@ ggplot(data=temp_budget_df) +
 
 ##### Yearly Seminary Budget
 ```{r}
-ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(designated)), by=.(year, Seminary)]) +
-  geom_line(mapping = aes(x=year, y=(allocation+designated)/1000, color=Seminary)) +
+ggplot(data=temp_budget_df[,.(allocated=mean(allocated), designated=mean(designated)), by=.(year, Seminary)]) +
+  geom_line(mapping = aes(x=year, y=(allocated+designated)/1000, color=Seminary)) +
   ggtitle('Avg. Monthly Seminary Budget') +
   xlab('Year') + ylab('Amount Budgeted (thousands of USD)') +
   theme(legend.position='top', legend.title=element_blank())
@@ -269,7 +258,7 @@ ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(desig
 #### Other Spending {.tabset .tabset-fade}
 ```{r}
 # data prep
-one_time_items <- copy(budget_df)[, c:=.N, by=ministry][c==1, .(year, month, ministry, allocation, designated)]
+one_time_items <- copy(budget_df)[, c:=.N, by=ministry][c==1, .(year, month, ministry, allocated, designated)]
 temp_budget_df <- budget_df[!grepl('(Seminary)|(Mission Board)', ministry)]
 temp_budget_df <- temp_budget_df[!ministry %in% one_time_items[,ministry]]
 temp_budget_df <- temp_budget_df[ministry=='SBC Executive Comm and SBC Operating', ministry:='SBC EC & Operating'][
@@ -327,7 +316,7 @@ These one-time budget items will be excluded from the other charts in this secti
 ##### Monthly Other Budget
 ```{r}
 ggplot(data=temp_budget_df) +
-  geom_line(mapping = aes(x=date, y=(allocation+designated)/1000, color=ministry)) +
+  geom_line(mapping = aes(x=date, y=(allocated+designated)/1000, color=ministry)) +
   ggtitle('Monthly Other Budget') +
   xlab('Month') + ylab('Amount Budgeted (thousands of USD)') +
   theme(legend.position='top', legend.title=element_blank())
@@ -346,8 +335,8 @@ June 2021. A future iteration of this analysis will investigate that unexpected 
 
 ##### Yearly Other Budget
 ```{r}
-ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(designated)), by=.(year, ministry)]) +
-  geom_line(mapping = aes(x=year, y=(allocation+designated)/1000, color=ministry)) +
+ggplot(data=temp_budget_df[,.(allocated=mean(allocated), designated=mean(designated)), by=.(year, ministry)]) +
+  geom_line(mapping = aes(x=year, y=(allocated+designated)/1000, color=ministry)) +
   ggtitle('Avg. Monthly Other Budget') +
   xlab('Year') + ylab('Amount Budgeted (thousands of USD)') +
   theme(legend.position='top', legend.title=element_blank())
@@ -359,4 +348,4 @@ ggplot(data=temp_budget_df[,.(allocation=mean(allocation), designated=mean(desig
 
 ### CP Receipts Overview
 
-Now, here is a look at the national CP receipts.
+Coming soon...

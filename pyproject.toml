@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "sbc-cooperative-program-giving"
+version = "0.1.0"
+description = ""
+authors = ["Grady Lynn"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+beautifulsoup4 = "^4.12.3"
+requests = "^2.31.0"
+pandas = "^2.1.3"
+tabula-py = "^2.9.0"

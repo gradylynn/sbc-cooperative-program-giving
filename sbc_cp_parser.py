@@ -15,7 +15,7 @@ from datetime import datetime
 def download_reports(filepath):
     # get the html from the cooperative program report webpage
     url = 'https://www.sbc.net/missions/the-cooperative-program/reports/monthly/'
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0'}
+    headers = {'User-Agent': 'gradylynn'}
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.content, 'html.parser')
 
@@ -23,7 +23,7 @@ def download_reports(filepath):
     pdf_links = {}
     for ultag in soup.find_all(href=True):
         link = ultag['href']
-        if link[-24:] == 'Contribution-Reports.pdf':
+        if link.endswith('Contribution-Reports.pdf'):
             pdf_links[link.split('/')[-1]] = link
 
     # write pdfs to specified zip directory

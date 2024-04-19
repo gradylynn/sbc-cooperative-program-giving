@@ -26,7 +26,7 @@ jobs:
       run: poetry install
 
     - name: Downloading reports
-      run: poetry run python -c 'from sbc_cp_parser import download_reports; download_reports("/cp_reports.zip");'
+      run: poetry run python -c 'from sbc_cp_parser import download_reports; download_reports("./cp_reports.zip");'
 
     - name: Release data
       uses: softprops/action-gh-release@v2

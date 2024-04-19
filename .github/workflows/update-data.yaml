@@ -33,4 +33,4 @@ jobs:
       with:
         name: test1
         make_latest: true
-        files: /cp_reports.zip
+        files: ./cp_reports.zip

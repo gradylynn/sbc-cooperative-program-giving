@@ -1,0 +1,36 @@
+---
+name: Update and Release Data
+
+on:
+  schedule:
+    - cron: '45 18 15 * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # Installing python things
+    # https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md#caching-packages
+    - name: Install poetry
+      run: pipx install poetry==1.5.1
+    - name: Setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'poetry'
+    - name: Install python deps
+      run: poetry install
+
+    - name: Downloading reports
+      run: python -c 'import download_reports from sbc_cp_parser; download_reports("/cp_reports.zip");'
+
+    - name: Release data
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: test1
+        make_latest: true
+        files: /cp_reports.zip

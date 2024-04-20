@@ -25,25 +25,19 @@ jobs:
     - name: Install python deps
       run: poetry install
 
-    # - name: Downloading reports
-    #   run: poetry run python -c 'from sbc_cp_parser import download_reports; download_reports("./cp_reports.zip");'
+    - name: Downloading reports
+      run: poetry run python -c 'from sbc_cp_parser import download_reports; download_reports("./cp_reports.zip");'
 
-    # - name: Parsing reports
-    #   run: poetry run python -c 'from sbc_cp_parser import reports_to_csv; reports_to_csv("./cp_reports.zip", "./");'
+    - name: Parsing reports
+      run: poetry run python -c 'from sbc_cp_parser import reports_to_csv; reports_to_csv("./cp_reports.zip", "./");'
 
     - name: Create release tag
       id: tag
-      run: echo "TAG=$(date --date='25 days ago' '+%Y-%m') $(date --date='25 days ago' '+%b %Y') data" >> "$GITHUB_OUTPUT"
+      run: echo "TAG=$(date --date='25 days ago' '+%Y-%m') - $(date --date='25 days ago' '+%b %Y') data" >> "$GITHUB_OUTPUT"
 
     - name: Create release name
       id: name
       run: echo "NAME=$(date --date='25 days ago' '+%B %Y') Data Release" >> "$GITHUB_OUTPUT"
-
-    - name: Test stuff
-      env:
-        tag: ${{ steps.tag.outputs.TAG }}
-        name: ${{ steps.name.outputs.NAME }}
-      run: echo $NAME potato $TAG
 
     - name: Release data
       uses: softprops/action-gh-release@v2

@@ -28,10 +28,24 @@ jobs:
     - name: Downloading reports
       run: poetry run python -c 'from sbc_cp_parser import download_reports; download_reports("./cp_reports.zip");'
 
+    - name: Parsing reports
+      run: poetry run python -c 'from sbc_cp_parser import reports_to_csv; reports_to_csv("./cp_reports.zip", "./");'
+
+    - name: Create release tag
+      id: tag
+      run: 'echo $(date --date="25 days ago" +%Y-%m): $(date --date="25 days ago" "+%b %Y") data'
+
+    - name: Create release name
+      id: name
+      run: 'echo $(date --date="25 days ago" "+%B %Y") Data Release'
+
     - name: Release data
       uses: softprops/action-gh-release@v2
       with:
-        name: test-1
-        tag_name: test-tag-1
+        name: ${{ steps.name.outputs.name }}
+        tag_name: ${{ steps.tag.outputs.tag }}
         make_latest: true
-        files: ./cp_reports.zip
+        files: |
+          ./cp_reports.zip
+          ./cp_receipts.csv
+          ./cp_budget.csv

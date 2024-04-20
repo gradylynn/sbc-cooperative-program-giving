@@ -15,7 +15,7 @@ from datetime import datetime
 def download_reports(filepath):
     # get the html from the cooperative program report webpage
     url = 'https://www.sbc.net/missions/the-cooperative-program/reports/monthly/'
-    headers = {'User-Agent': 'gradylynn'}
+    headers = {'User-Agent': 'github.com/gradylynn/sbc-cooperative-program-giving'}
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.content, 'html.parser')
 
@@ -128,33 +128,10 @@ def reports_to_csv(reports_path, csv_path):
     receipts_dfs = []
     budget_dfs = []
 
-    if zipfile.is_zipfile(reports_path):
-        with zipfile.ZipFile(reports_path, 'r') as zip_object:
-            for name in zip_object.namelist():
-                # parse cp receipts
-                try:
-                    receipts_df = parse_cp_receipts(zip_object.open(name))
-                    receipts_df['fy'] = get_fy(name)
-                    receipts_df['month'] = get_month(name)
-                    receipts_df['year'] = get_year(name)
-                    receipts_dfs.append(receipts_df)
-                except Exception as error:
-                    print('receipt parse error:', name)
-                    print(error)
+    with zipfile.ZipFile(reports_path, 'r') as zip_object:
+        for name in zip_object.namelist():
+            print('Parsing data from:', name)
 
-                # parse cp budget
-                try:
-                    budget_df = parse_cp_budget(zip_object.open(name))
-                    budget_df['fy'] = get_fy(name)
-                    budget_df['month'] = get_month(name)
-                    budget_df['year'] = get_year(name)
-                    budget_dfs.append(budget_df)
-                except Exception as error:
-                    print('budget parse error:', name)
-                    print(error)
-
-    else:
-        for filename in list(os.walk(pdfs_path))[0][2]:
             # parse cp receipts
             try:
                 receipts_df = parse_cp_receipts(zip_object.open(name))
@@ -163,7 +140,7 @@ def reports_to_csv(reports_path, csv_path):
                 receipts_df['year'] = get_year(name)
                 receipts_dfs.append(receipts_df)
             except Exception as error:
-                print('receipt parse error:', filename)
+                print('receipt parse error!')
                 print(error)
 
             # parse cp budget
@@ -174,7 +151,7 @@ def reports_to_csv(reports_path, csv_path):
                 budget_df['year'] = get_year(name)
                 budget_dfs.append(budget_df)
             except Exception as error:
-                print('budget parse error:', filename)
+                print('budget parse error!')
                 print(error)
 
     receipts_df = pd.concat(receipts_dfs).reset_index()

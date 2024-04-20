@@ -33,7 +33,7 @@ jobs:
 
     - name: Create release tag
       id: tag
-      run: echo "TAG=$(date --date='25 days ago' '+%Y-%m') - $(date --date='25 days ago' '+%b %Y') data" >> "$GITHUB_OUTPUT"
+      run: echo "TAG=$(date --date='25 days ago' '+%Y-%m')-data" >> "$GITHUB_OUTPUT"
 
     - name: Create release name
       id: name

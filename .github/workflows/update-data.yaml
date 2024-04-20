@@ -33,17 +33,23 @@ jobs:
 
     - name: Create release tag
       id: tag
-      run: 'echo $(date --date="25 days ago" +%Y-%m): $(date --date="25 days ago" "+%b %Y") data'
+      run: echo "TAG=$(date --date='25 days ago' '+%Y-%m') $(date --date='25 days ago' '+%b %Y') data" >> "$GITHUB_OUTPUT"
 
     - name: Create release name
       id: name
-      run: 'echo $(date --date="25 days ago" "+%B %Y") Data Release'
+      run: echo "NAME=$(date --date='25 days ago' '+%B %Y') Data Release" >> "$GITHUB_OUTPUT"
+
+    - name: Test stuff
+      env:
+        tag: ${{ steps.tag.outputs.TAG }}
+        name: ${{ steps.name.outputs.NAME }}
+      run: echo $NAME potato $TAG
 
     - name: Release data
       uses: softprops/action-gh-release@v2
       with:
-        name: ${{ steps.name.outputs.name }}
-        tag_name: ${{ steps.tag.outputs.tag }}
+        name: ${{ steps.name.outputs.NAME }}
+        tag_name: ${{ steps.tag.outputs.TAG }}
         make_latest: true
         files: |
           ./cp_reports.zip

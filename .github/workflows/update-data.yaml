@@ -25,11 +25,11 @@ jobs:
     - name: Install python deps
       run: poetry install
 
-    - name: Downloading reports
-      run: poetry run python -c 'from sbc_cp_parser import download_reports; download_reports("./cp_reports.zip");'
+    # - name: Downloading reports
+    #   run: poetry run python -c 'from sbc_cp_parser import download_reports; download_reports("./cp_reports.zip");'
 
-    - name: Parsing reports
-      run: poetry run python -c 'from sbc_cp_parser import reports_to_csv; reports_to_csv("./cp_reports.zip", "./");'
+    # - name: Parsing reports
+    #   run: poetry run python -c 'from sbc_cp_parser import reports_to_csv; reports_to_csv("./cp_reports.zip", "./");'
 
     - name: Create release tag
       id: tag

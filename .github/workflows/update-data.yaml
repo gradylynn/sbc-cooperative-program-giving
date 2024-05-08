@@ -3,7 +3,7 @@ name: Update and Release Data
 
 on:
   schedule:
-    - cron: '45 18 15 * *'
+    - cron: '45 18 8 * *'
   workflow_dispatch:
 
 jobs:
